@@ -1,13 +1,11 @@
 # импорты
 import sqlalchemy as sq
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import Session
-
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, declarative_base
 
 from config import db_url_object
 
-metadata = MetaData()
+
 Base = declarative_base()
 
 
