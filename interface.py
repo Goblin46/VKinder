@@ -48,32 +48,34 @@ class BotInterface():
                             'Пожалуйста укажите город используя команду "город <название>",'
                             ' например "город Москва"')
                         continue
+                    elif self.params.get("year") is None:
+                        self.message_send(
+                            event.user_id,
+                            'Пожалуйста укажите свой возраст используя команду "возраст <число>",'
+                            ' например "возраст 18"')
+                        continue
+
                     '''Логика для поиска анкет'''
                     self.message_send(
                         event.user_id, 'Начинаем поиск')
-                    if self.worksheets:
-                        worksheet = self.worksheets.pop()
-                        photos = self.vk_tools.get_photos(worksheet['id'])
-                        photo_string = ''
-                        for photo in photos:
-                            photo_string += f'photo{photo["owner_id"]}_{photo["id"]},'
-                    else:
+                    if not self.worksheets:
                         self.worksheets = self.vk_tools.search_worksheet(
                             self.params, self.offset)
 
-                        'проверка анкеты в бд в соотвествие с event.user_id'
-                        worksheet = None
-                        for i, worksheet in enumerate(self.worksheets):
-                            if check_user(self.engine, event.user_id, worksheet['id']):
-                                self.worksheets.pop(i)
-                            else:
-                                break
+                    'проверка анкеты в бд в соотвествие с event.user_id'
+                    worksheet = None
+                    new_worksheets = []
+                    for worksheet in self.worksheets:
+                        if not check_user(self.engine, event.user_id, worksheet['id']):
+                            new_worksheets.append(worksheet)
+                    self.worksheets = new_worksheets.copy()
+                    worksheet = self.worksheets.pop(0)
 
-                        photos = self.vk_tools.get_photos(worksheet['id'])
-                        photo_string = ''
-                        for photo in photos:
-                            photo_string += f'photo{photo["owner_id"]}_{photo["id"]},'
-                        self.offset += 10
+                    photos = self.vk_tools.get_photos(worksheet['id'])
+                    photo_string = ''
+                    for photo in photos:
+                        photo_string += f'photo{photo["owner_id"]}_{photo["id"]},'
+                    self.offset += 10
 
                     self.message_send(
                         event.user_id,
@@ -83,7 +85,6 @@ class BotInterface():
 
                     'добавить анкету в бд в соотвествие с event.user_id'
                     add_user(self.engine, event.user_id, worksheet['id'])
-
                 elif event.text.lower().startswith("город "):
                     city_name = ' '.join(event.text.lower().split()[1:])
                     city = self.vk_tools.get_city(city_name)
@@ -94,7 +95,21 @@ class BotInterface():
                         self.params['city'] = city['title']
                         self.message_send(
                             event.user_id, f'Вы успешно установили город {city["title"]}')
-
+                elif event.text.lower().startswith("возраст "):
+                    age = event.text.lower().split()[1]
+                    try:
+                        age = int(age)
+                    except ValueError:
+                        self.message_send(
+                            event.user_id, 'Необходимо ввести число')
+                        continue
+                    if not 18 <= age <= 99:
+                        self.message_send(
+                            event.user_id, 'Ваш возраст должен быть от 18 до 99 лет')
+                        continue
+                    self.params['year'] = age
+                    self.message_send(
+                        event.user_id, 'Вы успешно установили свой возраст')
                 elif event.text.lower() == 'пока':
                     self.message_send(
                         event.user_id, 'До новых встреч')
