@@ -1,6 +1,7 @@
-from pprint import pprint
-from datetime import datetime
 # импорты
+from datetime import datetime
+from pprint import pprint
+
 import vk_api
 from vk_api.exceptions import ApiError
 
@@ -95,6 +96,7 @@ class VkTools:
                    } for item in photos['items']
                   ]
         '''сортировка по лайкам и комментам'''
+        result = sorted(result, key=lambda x: (x['likes'], x['comments']), reverse=True)
         return result[:3]
 
 
